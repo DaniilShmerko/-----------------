@@ -201,4 +201,4 @@ if __name__ == "__main__":
     
     des = DES(plaintext, key)
     ciphertext = des.encrypt()
-    print(f"Зашифрованный текст: {ciphertext}")
+    print(f"Зашифрованный текст: {ciphertext}")  
