@@ -1,6 +1,5 @@
 import struct
 
-
 class MD4:
     width = 32
     mask = 0xFFFFFFFF
@@ -86,52 +85,51 @@ class MD4:
         lbits, rbits = (value << n) & MD4.mask, value >> (MD4.width - n)
         return lbits | rbits
 
-def main():
-    import sys
-
-    if len(sys.argv) > 1:
-        messages = [msg.encode() for msg in sys.argv[1:]]
-        for message in messages:
-            print(MD4(message).hexdigest())
-    else:
-        messages = [b" hello World!"]
-        known_hashes = [
-            "31d6cfe0d16ae931b73c59d7e0c089c0",
-        ]
-
-
-        for message, expected in zip(messages, known_hashes):
-            print("Message: ", message)
-            print("Ожидание:", expected)
-            print("Получилось: ", MD4(message).hexdigest())
-            print()
-
-        hex_strings = [
-            "839c7a4d7a92cb5678a5d5b9eea5a7573c8a74deb366c3dc20a083b69f5d2a3bb3719dc69891e9f95e809fd7e8b23ba6318edd45e51fe39708bf9427e9c3e8b9",
-            "839c7a4d7a92cbd678a5d529eea5a7573c8a74deb366c3dc20a083b69f5d2a3bb3719dc69891e9f95e809fd7e8b23ba6318edc45e51fe39708bf9427e9c3e8b9",
-        ]
-        for hex_string in hex_strings:
-            message = bytes.fromhex(hex_string)
-            md4_hash = MD4(message).hexdigest()
-            print(f"MD4({hex_string}) = {md4_hash}")
-
 def verify_signature(message, signature, public_key):
     n, e = public_key
     decrypted_signature = pow(signature, e, n)
     return decrypted_signature == message
 
+def main():
+    print("Запуск MD4.\n")
+
+    # Проверка MD4 для пустой строки
+    messages = [b""]
+    known_hashes = ["31d6cfe0d16ae931b73c59d7e0c089c0"]
+
+    for message, expected in zip(messages, known_hashes):
+        result = MD4(message).hexdigest()
+        print("Message: ", message)
+        print("Ожидание:", expected)
+        print("Получилось: ", result)
+        print("Проверка результата:", result == expected)
+        print()
+
+    # Вычисление MD4 для заданных hex-чисел
+    hex_strings = [
+        "839c7a4d7a92cb5678a5d5b9eea5a7573c8a74deb366c3dc20a083b69f5d2a3bb3719dc69891e9f95e809fd7e8b23ba6318edd45e51fe39708bf9427e9c3e8b9",
+        "839c7a4d7a92cbd678a5d529eea5a7573c8a74deb366c3dc20a083b69f5d2a3bb3719dc69891e9f95e809fd7e8b23ba6318edc45e51fe39708bf9427e9c3e8b9",
+    ]
+    hashes = []
+    for hex_string in hex_strings:
+        message = bytes.fromhex(hex_string)
+        md4_hash = MD4(message).hexdigest()
+        hashes.append(md4_hash)
+        print(f"MD4({hex_string}) = {md4_hash}")
+
+    print("\nПроверка, что хэши разные:", hashes[0] != hashes[1])
+
+    # Проверка цифровой подписи
+    print("\nПроверка цифровой подписи:")
+    public_key = (55, 3)
+    messages = [(7, 28), (288, 15), (16, 36)]
+
+    for message, signature in messages:
+        is_valid = verify_signature(message, signature, public_key)
+        if is_valid:
+            print(f"Подпись для сообщения {message} верна.")
+        else:
+            print(f"Подпись для сообщения {message} недействительна.")
+
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        pass
-
-public_key = (55, 3)
-messages = [(7, 28), (288, 15), (16, 36)]
-
-for message, signature in messages:
-    is_valid = verify_signature(message, signature, public_key)
-    if is_valid:
-        print(f"Подпись для сообщения {message} верна.")
-    else:
-        print(f"Подпись для сообщения {message} недействительна.")
+    main()
