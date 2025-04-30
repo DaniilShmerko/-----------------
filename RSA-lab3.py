@@ -1,99 +1,93 @@
-# Алфавит по Приложению 2
-alphabet = [
-    'А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ё', 'Ж', 'З', 'И', 'Й',
-    'К', 'Л', 'М', 'Н', 'О', 'П', 'Р', 'С', 'Т', 'У', 'Ф',
-    'Х', 'Ц', 'Ч', 'Ш', 'Щ', 'Ъ', 'Ы', 'Ь', 'Э', 'Ю', 'Я',
-    ' ', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
-]
+from math import gcd  # Импорт функции gcd из модуля math
 
-# Функция определения простоты
-def is_prime(n):
-    if n < 2:
+class Handbook:
+    @staticmethod
+    def get_encrypt_dictionary():
+        # Алфавит для шифрования
+        alphabet = [
+            "№", "А", "Б", "В", "Г", "Д", "Е", "Ё", "Ж", "З", "И", "Й", "К", "Л", "М", "Н", "О",
+            "П", "Р", "С", "Т", "У", "Ф", "Х", "Ц", "Ч", "Ш", "Щ", "Ь", "Ы", "Ъ", "Э", "Ю", "Я", " ", "0", "1", "2", "3", "4", "5", "6", "8", "9", "-",
+            "_", "!", "@", "#", "+", "=", "(", ")"
+        ]
+        return {char: index for index, char in enumerate(alphabet)}
+
+    @staticmethod
+    def get_decrypt_dictionary():
+        encrypt_dict = Handbook.get_encrypt_dictionary()
+        return {v: k for k, v in encrypt_dict.items()}
+
+def is_prime(num):
+    if num < 2:
         return False
-    for i in range(2, int(n ** 0.5) + 1):
-        if n % i == 0:
+    for i in range(2, int(num**0.5) + 1):
+        if num % i == 0:
             return False
     return True
 
-# НОД
-def gcd(a, b):
-    while b != 0:
-        a, b = b, a % b
-    return a
+class RSA:
+    def __init__(self, p, q, e):
+        self.p = p
+        self.q = q
+        self.n = p * q
+        self.e = e
+        self.d = 0
+        self.ENCRYPT_MAP = Handbook.get_encrypt_dictionary()
+        self.DECRYPT_MAP = Handbook.get_decrypt_dictionary()
+        self.create_keys()
 
-# Обратный элемент по модулю
-def mod_inverse(e, phi):
-    for d in range(1, phi):
-        if (e * d) % phi == 1:
-            return d
-    return None
+    def show_open_key(self):
+        print(f"Публичный ключ: ({self.e}, {self.n})")
 
-# Генерация ключей
-def generate_key_pair(p, q):
-    n = p * q
-    phi = (p - 1) * (q - 1)
+    def show_close_key(self):
+        print(f"Приватный ключ: ({self.d}, {self.n})")
 
-    # Выбираем e как наибольшее простое < p
-    e = p - 1
-    while not is_prime(e) or gcd(e, phi) != 1:
-        e -= 1
+    def encrypt(self, message):
+        encrypted = []
+        for char in message:
+            char_num = self.ENCRYPT_MAP[char]
+            var = pow(char_num, self.e, self.n)
+            encrypted.append(var)
+        return encrypted
 
-    d = mod_inverse(e, phi)
-    return (e, n), (d, n)
+    def decrypt(self, encrypted_list):
+        decrypted = ""
+        for num in encrypted_list:
+            var = pow(num, self.d, self.n)
+            decrypted += self.DECRYPT_MAP[var]
+        return decrypted
 
-# Шифрование
-def encrypt(pub_k, msg):
-    e, n = pub_k
-    crypt = []
-    for char in msg:
-        try:
-            idx = alphabet.index(char.upper())
-        except ValueError:
-            print(f"Ошибка: Символ '{char}' отсутствует в алфавите.")
-            continue
-        encrypted = pow(idx, e, n)
-        crypt.append(encrypted)
-    return crypt
+    def create_keys(self):
+        euler_func_value = self.euler_function(self.p, self.q)
+        self.d = self.get_d(euler_func_value, self.e)
 
-# Дешифрование
-def decrypt(priv_k, cipher):
-    d, n = priv_k
-    decrypted = []
-    for num in cipher:
-        decoded_index = pow(num, d, n)
-        if 0 <= decoded_index < len(alphabet):
-            decrypted.append(alphabet[decoded_index])
-        else:
-            # Защита от выхода за границы алфавита
-            decoded_index %= len(alphabet)
-            decrypted.append(alphabet[decoded_index])
-    return ''.join(decrypted)
+    @staticmethod
+    def euler_function(p, q):
+        return (p - 1) * (q - 1)
 
-# ================================
-#           Main
-# ================================
+    def get_d(self, euler_func_value, e):
+        d = 0
+        while (d * e) % euler_func_value != 1:
+            d += 1
+        return d
 
-# Простые числа для варианта 13
+# Пример использования
 p = 17
 q = 41
-
-# Генерация ключей
-public, private = generate_key_pair(p, q)
-print("Публичный ключ: ", public)
-print("Приватный ключ: ", private)
-
-# Исходное сообщение
+e = 13  # Пример значения для e, соответствующего вашему описанию
 message = "ШМЕРКО"
-encrypted_msg = encrypt(public, message)
-print("\nИсходное сообщение:", message)
-print("Зашифрованное сообщение:", encrypted_msg)
 
-# Расшифрование
-decrypted_msg = decrypt(private, encrypted_msg)
-print("Расшифрованное сообщение:", decrypted_msg)
+rsa = RSA(p, q, e)  # Создание объекта RSA с параметрами p, q и e
+rsa.show_open_key()  # Вывод открытого ключа
+rsa.show_close_key()  # Вывод закрытого ключа
+encrypted_message = rsa.encrypt(message)  # Шифрование сообщения
+decrypted_message = rsa.decrypt(encrypted_message)  # Дешифрование сообщения
 
-# Расшифровка криптограммы
-cryptogram = [576, 142, 639, 421, 208, 608]
-decrypted_cryptogram = decrypt(private, cryptogram)
-print("\nКриптограмма:", cryptogram)
-print("Расшифрованное сообщение (криптограммы):", decrypted_cryptogram)
+print(f"\nИсходное сообщение: {message}")
+print(f"Зашифрованное сообщение: {encrypted_message}")
+print(f"Расшифрованное сообщение: {decrypted_message}")
+
+# Table
+encrFromTable = [576, 142, 639, 421, 208, 608]
+print(f"\nКриптограмма: {encrFromTable}")
+decrypted_message = rsa.decrypt(encrFromTable)
+print(f"Расшифрованное сообщение (криптограммы): {decrypted_message}")
